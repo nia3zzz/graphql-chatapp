@@ -4,9 +4,11 @@
     "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
-    "hono": "^4.10.6"
+    "hono": "^4.10.6",
+    "mongoose": "^9.0.1"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.19.6",
     "@types/bun": "latest"
   }
 }
