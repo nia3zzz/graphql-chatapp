@@ -1,11 +1,25 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import connectToDB from "./db/connToDB";
+import { createYoga, createSchema } from "graphql-yoga";
+import typeDefs from "./graphQL/typeDefs";
+import resolvers from "./graphQL/resolvers";
 
 const app = new Hono();
 
+const yoga = createYoga({
+  schema: createSchema({
+    typeDefs,
+    resolvers,
+  }),
+});
+
 app.get("/", (c) => {
   return c.text("Hello Hono!");
+});
+
+app.use("/graphql", async (context) => {
+  return yoga.handle({ request: context.req.raw });
 });
 
 try {
