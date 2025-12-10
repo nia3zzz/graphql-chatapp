@@ -28,4 +28,20 @@ const registerUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
-export { registerUserSchema };
+// login user validation schema
+const loginUserSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters long")
+      .optional(),
+
+    email: z.email().optional(),
+
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+  })
+  .refine((data) => data.username || data.email, {
+    message: "Either username or email must be provided",
+  });
+
+export { registerUserSchema, loginUserSchema };

@@ -1,9 +1,14 @@
 // auth routes
 import { Hono } from "hono";
-import { registerUserSchema } from "../validators/authValidators";
+import {
+  loginUserSchema,
+  registerUserSchema,
+} from "../validators/authValidators";
 import z from "zod";
 import { IUser, UserModel } from "../models/userModel";
 import { UploadApiResponse, cloudinary } from "../cloudinary";
+import * as jwt from "jsonwebtoken";
+import { setCookie } from "hono/cookie";
 
 // start up new instance of hono
 const authRoutes = new Hono();
@@ -100,6 +105,87 @@ authRoutes.post("/register", async (c) => {
     return c.json(
       {
         success: false,
+        message: "Internal server error.",
+      },
+      500
+    );
+  }
+});
+
+// login user route
+authRoutes.post("/login", async (c) => {
+  // parse the request body
+  const body = await c.req.json();
+
+  // validate body using zod schema
+  const validatedData = loginUserSchema.safeParse(body);
+
+  if (!validatedData.success) {
+    return c.json(
+      {
+        success: false,
+        message: "Failed in type validation.",
+        errors: z.flattenError(validatedData.error),
+      },
+      400
+    );
+  }
+
+  // check if user exists with username or email
+  const foundUser: IUser | null = await UserModel.findOne(
+    validatedData.data.username
+      ? { username: validatedData.data.username }
+      : { email: validatedData.data.email }
+  );
+
+  if (!foundUser) {
+    return c.json(
+      {
+        success: false,
+        message: "Invalid credentials.",
+      },
+      401
+    );
+  }
+
+  // verify password
+  const isPasswordValid: boolean = await Bun.password.verify(
+    validatedData.data.password,
+    foundUser.password
+  );
+
+  if (!isPasswordValid) {
+    return c.json(
+      {
+        success: false,
+        message: "Invalid credentials.",
+      },
+      401
+    );
+  }
+  try {
+    // generate a token
+    const token = jwt.sign(
+      {
+        id: foundUser.id,
+      },
+      process.env.JWT_SECRET_KEY as string,
+      { expiresIn: "30d" }
+    );
+
+    setCookie(c, "auth_token", token);
+
+    return c.json(
+      {
+        status: true,
+        message: "Login successful.",
+      },
+      200
+    );
+  } catch (error) {
+    return c.json(
+      {
+        status: false,
         message: "Internal server error.",
       },
       500
