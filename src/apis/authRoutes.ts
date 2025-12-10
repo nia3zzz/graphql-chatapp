@@ -8,7 +8,7 @@ import z from "zod";
 import { IUser, UserModel } from "../models/userModel";
 import { UploadApiResponse, cloudinary } from "../cloudinary";
 import * as jwt from "jsonwebtoken";
-import { setCookie } from "hono/cookie";
+import { setCookie, deleteCookie } from "hono/cookie";
 
 // start up new instance of hono
 const authRoutes = new Hono();
@@ -187,6 +187,30 @@ authRoutes.post("/login", async (c) => {
       {
         status: false,
         message: "Internal server error.",
+      },
+      500
+    );
+  }
+});
+
+// logout user route
+authRoutes.post("/logout", async (c) => {
+  try {
+    // delete the cookie from the user
+    deleteCookie(c, "auth_token");
+
+    return c.json(
+      {
+        status: true,
+        messge: "User logged-out",
+      },
+      200
+    );
+  } catch (error) {
+    return c.json(
+      {
+        status: false,
+        message: "Something went wrong.",
       },
       500
     );
