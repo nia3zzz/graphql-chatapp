@@ -5,6 +5,8 @@ import { createYoga, createSchema } from "graphql-yoga";
 import typeDefs from "./graphQL/typeDefs";
 import resolvers from "./graphQL/resolvers";
 import authRoutes from "./apis/authRoutes";
+import { logger } from "hono/logger";
+import verifyUserMiddleware from "./utils/verifyCookie";
 
 const app = new Hono();
 
@@ -15,6 +17,11 @@ const yoga = createYoga({
     resolvers,
   }),
 });
+
+// logger middleware
+app.use(logger());
+app.use("/auth/*", verifyUserMiddleware);
+app.use("/graphql", verifyUserMiddleware);
 
 app.get("/", (c) => {
   return c.text("Hello Hono!");
