@@ -11,7 +11,7 @@ if (!JWTSecretKey) {
 
 const verifyUserMiddleware = async (c: Context, next: Next) => {
   // if the routes are registration and login allow the request
-  if (safeRoutes.includes(c.req.url)) {
+  if (safeRoutes.includes(c.req.path)) {
     await next();
   }
 
