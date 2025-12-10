@@ -1,5 +1,6 @@
 import { Context, Next } from "hono";
 import * as jwt from "jsonwebtoken";
+import { getCookie } from "hono/cookie";
 
 const safeRoutes: string[] = ["/auth/register", "/auth/login"];
 
@@ -16,7 +17,7 @@ const verifyUserMiddleware = async (c: Context, next: Next) => {
   }
 
   // access the cookie from the request
-  const accessCookie = c.req.header("cookie")?.split("=")[1];
+  const accessCookie = getCookie(c, "auth_token");
 
   // if no cookie found return unauthorized
   if (!accessCookie) {
