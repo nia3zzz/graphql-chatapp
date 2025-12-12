@@ -10,7 +10,6 @@ const registerUserSchema = z.object({
     .custom<File>((val) => val instanceof File, {
       message: "Expected a File object",
     })
-    .optional()
     .refine(
       (file) =>
         file === undefined ||
@@ -21,7 +20,8 @@ const registerUserSchema = z.object({
     )
     .refine((file) => file === undefined || file.size <= 5 * 1024 * 1024, {
       message: "File must be under 5 MB",
-    }),
+    })
+    .optional(),
 
   email: z.email(),
 

@@ -1,5 +1,6 @@
 const typeDefs: string = `
       scalar Date
+      scalar File
 
       type User {
         id:ID!
@@ -33,6 +34,15 @@ const typeDefs: string = `
       type Query {
         hello: String!
       }
-    `;
+
+      type Mutation {
+        updateUser(
+          name: String
+          username: String
+          profilePicture: File
+          email: String
+        ): User!
+      }
+`;
 
 export default typeDefs;
