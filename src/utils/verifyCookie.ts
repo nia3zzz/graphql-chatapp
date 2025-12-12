@@ -10,6 +10,10 @@ if (!JWTSecretKey) {
   throw new Error("JWT Secret Key not defined in .env file.");
 }
 
+interface JWTPayload extends jwt.JwtPayload {
+  id: string;
+}
+
 const verifyUserMiddleware = async (c: Context, next: Next) => {
   // if the routes are registration and login allow the request
   if (safeRoutes.includes(c.req.path)) {
@@ -28,9 +32,13 @@ const verifyUserMiddleware = async (c: Context, next: Next) => {
     //   decode the cookie value using jsonwebtokens
     const decoded = jwt.verify(accessCookie, JWTSecretKey);
 
-    c.set("userId", decoded);
+    if (typeof decoded === "object" && decoded !== null && "id" in decoded) {
+      c.set("userId", (decoded as JWTPayload).id);
 
-    await next();
+      await next();
+    } else {
+      return c.json({ success: false, message: "Unauthorized." }, 401);
+    }
   } catch (error) {
     return c.json(
       {

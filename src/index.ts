@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import type { Context } from "hono";
 import connectToDB from "./db/connToDB";
 import { createYoga, createSchema } from "graphql-yoga";
 import typeDefs from "./graphQL/typeDefs";
@@ -16,6 +17,11 @@ const yoga = createYoga({
     typeDefs,
     resolvers,
   }),
+  context: (context: { request: Request; userId?: string }) => {
+    return {
+      userId: (context as any).userId,
+    };
+  },
 });
 
 // logger middleware
@@ -30,10 +36,17 @@ app.get("/", (c) => {
 // add the auth route hono instance
 app.route("/auth", authRoutes);
 
-// mount the GraphQL server
-app.use("/graphql", async (context) => {
-  return yoga.handle({ request: context.req.raw });
-});
+app.use(
+  "/graphql",
+  async (context: Context & { get(key: string): unknown }) => {
+    const userId = context.get("userId") as string | undefined;
+    (context.req.raw as any).userId = userId;
+    return yoga.handle({
+      request: context.req.raw,
+      userId,
+    });
+  }
+);
 
 try {
   // run server and mongodb connection
