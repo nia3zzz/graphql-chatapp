@@ -1,34 +1,34 @@
 const typeDefs: string = `
       scalar Date
-      scalar File
+      scalar Upload
 
       type User {
         id:ID!
-        name:String!
-        username:String!
-        email:String!
-        profilePicture:String!
-        createdAt:Date!
-        updatedAt:Date!
+        name: String!
+        username: String!
+        email: String!
+        profilePicture: String!
+        createdAt: Date!
+        updatedAt: Date!
       }
 
       type Chat {
-        id:ID!
-        chatName:String!
-        isGroupChat:Boolean!
-        participants:[User!]!
-        groupAdmin:User!
-        createdAt:Date!
-        updatedAt:Date!
+        id: ID!
+        chatName: String
+        isGroupChat: Boolean!
+        participants: [User!]!
+        groupAdmin: User
+        createdAt: Date!
+        updatedAt: Date!
       }
 
       type Message {
-        id:ID!
-        sender:User!
-        reciever:User!
-        content:String!
-        createdAt:Date!
-        updatedAt:Date!
+        id: ID!
+        chat: Chat!
+        sender: User!
+        content: String!
+        createdAt: Date!
+        updatedAt: Date!
       }
 
       type Query {
@@ -39,9 +39,15 @@ const typeDefs: string = `
         updateUser(
           name: String
           username: String
-          profilePicture: File
+          profilePicture: Upload
           email: String
-        ): User!
+        ):User!
+
+        sendMessageOneToOne(
+          userId: ID!
+          message: String
+          file: Upload
+        ): Message!
       }
 `;
 

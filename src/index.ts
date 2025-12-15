@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import connectToDB from "./db/connToDB";
 import { createYoga, createSchema } from "graphql-yoga";
 import typeDefs from "./graphQL/typeDefs";
-import resolvers from "./graphQL/resolvers";
+import { resolvers } from "./graphQL/resolvers";
 import authRoutes from "./apis/authRoutes";
 import { logger } from "hono/logger";
 import verifyUserMiddleware from "./utils/verifyCookie";
