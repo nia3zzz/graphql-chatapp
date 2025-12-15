@@ -1,11 +1,11 @@
+import { Types } from "mongoose";
 import { Schema, Document, model } from "mongoose";
 
 interface IChat extends Document {
-  id: Schema.Types.ObjectId;
   chatName?: string;
   isGroupChat: boolean;
-  participants: Schema.Types.ObjectId[];
-  groupAdmin?: Schema.Types.ObjectId;
+  participants: Types.ObjectId[];
+  groupAdmin?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +16,7 @@ const chatSchema = new Schema<IChat>(
       type: String,
       trim: true,
       maxlength: 50,
+      required: false,
     },
 
     isGroupChat: {
@@ -35,6 +36,7 @@ const chatSchema = new Schema<IChat>(
     groupAdmin: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: false,
     },
   },
   {
@@ -42,6 +44,6 @@ const chatSchema = new Schema<IChat>(
   }
 );
 
-const chatModel = model<IChat>("Chat", chatSchema);
+const ChatModel = model<IChat>("Chat", chatSchema);
 
-export { IChat, chatModel };
+export { IChat, ChatModel };

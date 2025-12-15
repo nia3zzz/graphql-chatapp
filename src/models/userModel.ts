@@ -1,7 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 
 interface IUser extends Document {
-  id: Schema.Types.ObjectId;
   name: string;
   username: string;
   email: string;

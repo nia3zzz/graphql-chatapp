@@ -1,9 +1,9 @@
+import { Types } from "mongoose";
 import { Schema, model, Document } from "mongoose";
 
 interface IMessage extends Document {
-  id: Schema.Types.ObjectId;
-  sender: Schema.Types.ObjectId;
-  receiver: Schema.Types.ObjectId;
+  chat: Types.ObjectId;
+  sender: Types.ObjectId;
   content: string;
   createdAt: Date;
   updatedAt: Date;
@@ -11,13 +11,13 @@ interface IMessage extends Document {
 
 const messageSchema = new Schema<IMessage>(
   {
-    sender: {
+    chat: {
       type: Schema.Types.ObjectId,
+      ref: "Chat",
       required: true,
-      ref: "User",
     },
 
-    receiver: {
+    sender: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "User",
