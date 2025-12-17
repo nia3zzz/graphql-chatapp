@@ -69,4 +69,22 @@ const sendMessageOneToOneArgumentSchema = z
     message: "Either send text or file.",
   });
 
-export { updateUserArgumentSchema, sendMessageOneToOneArgumentSchema };
+// create group chat
+const createGroupChatArgumentSchema = z.object({
+  chatName: z
+    .string()
+    .min(2, "Chat name is too short.")
+    .max(15, "Chat name is too long."),
+
+  participants: z
+    .array(
+      z.string().length(24, "Invalid user id, must be 24 characters long.")
+    )
+    .min(3, "At least 3 participants are required."),
+});
+
+export {
+  updateUserArgumentSchema,
+  sendMessageOneToOneArgumentSchema,
+  createGroupChatArgumentSchema,
+};

@@ -48,6 +48,11 @@ const typeDefs: string = `
           message: String
           file: Upload
         ): Message!
+
+        createGroupChat(
+          chatName: String!
+          participants: [ID!]!
+        ): Chat!
       }
 `;
 

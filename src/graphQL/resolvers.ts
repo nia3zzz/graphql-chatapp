@@ -1,5 +1,6 @@
 import z from "zod";
 import {
+  createGroupChatArgumentSchema,
   sendMessageOneToOneArgumentSchema,
   updateUserArgumentSchema,
 } from "../validators/resolverValidators";
@@ -192,86 +193,157 @@ const resolvers = {
         throw new GraphQLError("No user found with provided user id.");
       }
 
-      // check if a chat model exists between the users
-      let checkChatExists: IChat | null = null;
-      checkChatExists = await ChatModel.findOne({
-        isGroupChat: false,
-        participants: {
-          $all: [context.userId, checkReciepeintUserExists._id],
-          $size: 2,
-        },
-      });
-
-      if (!checkChatExists) {
-        // create the chat model
-        checkChatExists = await ChatModel.create({
+      try {
+        // check if a chat model exists between the users
+        let checkChatExists: IChat | null = null;
+        checkChatExists = await ChatModel.findOne({
           isGroupChat: false,
-          participants: [
-            new Types.ObjectId(context.userId),
-            checkReciepeintUserExists._id,
-          ],
-        });
-      }
-
-      // if user uploaded a file
-      let contentValue: string | null = null;
-
-      contentValue = validatedArguments.data.message ?? "";
-
-      if (validatedArguments.data.file) {
-        // convert to buffer
-        const file = validatedArguments.data.file as File;
-        const buffer = Buffer.from(await file.arrayBuffer());
-
-        // upload in stream
-        const uploadResult: UploadApiResponse = await new Promise(
-          (resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              {
-                folder: "graphql-chatapp",
-              },
-              (err, result) => {
-                if (result) resolve(result);
-                else reject(err);
-              }
-            );
-
-            uploadStream.end(buffer);
-          }
-        );
-
-        contentValue = uploadResult.secure_url;
-      }
-
-      // create the message mutation
-      const createMessage: IMessage = await MessageModel.create({
-        chat: checkChatExists._id,
-        sender: new Types.ObjectId(context.userId),
-        content: contentValue,
-      });
-
-      // query the message with populated values
-      const populatedMessage = await MessageModel.findById(createMessage._id)
-        .populate("sender")
-        .populate({
-          path: "chat",
-          populate: {
-            path: "participants groupAdmin",
+          participants: {
+            $all: [context.userId, checkReciepeintUserExists._id],
+            $size: 2,
           },
         });
 
-      if (!populatedMessage) {
-        throw new GraphQLError("Failed to load message.");
+        if (!checkChatExists) {
+          // create the chat model
+          checkChatExists = await ChatModel.create({
+            isGroupChat: false,
+            participants: [
+              new Types.ObjectId(context.userId),
+              checkReciepeintUserExists._id,
+            ],
+          });
+        }
+
+        // if user uploaded a file
+        let contentValue: string | null = null;
+
+        contentValue = validatedArguments.data.message ?? "";
+
+        if (validatedArguments.data.file) {
+          // convert to buffer
+          const file = validatedArguments.data.file as File;
+          const buffer = Buffer.from(await file.arrayBuffer());
+
+          // upload in stream
+          const uploadResult: UploadApiResponse = await new Promise(
+            (resolve, reject) => {
+              const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                  folder: "graphql-chatapp",
+                },
+                (err, result) => {
+                  if (result) resolve(result);
+                  else reject(err);
+                }
+              );
+
+              uploadStream.end(buffer);
+            }
+          );
+
+          contentValue = uploadResult.secure_url;
+        }
+
+        // create the message mutation
+        const createMessage: IMessage = await MessageModel.create({
+          chat: checkChatExists._id,
+          sender: new Types.ObjectId(context.userId),
+          content: contentValue,
+        });
+
+        // query the message with populated values
+        const populatedMessage = await MessageModel.findById(createMessage._id)
+          .populate("sender")
+          .populate({
+            path: "chat",
+            populate: {
+              path: "participants groupAdmin",
+            },
+          });
+
+        if (!populatedMessage) {
+          throw new GraphQLError("Failed to load message.");
+        }
+
+        return {
+          id: populatedMessage._id.toString(),
+          chat: mapChat(populatedMessage.chat as any),
+          sender: mapUser(populatedMessage.sender as any),
+          content: populatedMessage.content,
+          createdAt: populatedMessage.createdAt,
+          updatedAt: populatedMessage.updatedAt,
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw new GraphQLError("Something went wrong.");
+      }
+    },
+
+    createGroupChat: async (
+      parent: unknown,
+      args: z.infer<typeof createGroupChatArgumentSchema>,
+      context: IContext,
+      info: unknown
+    ): Promise<IChatTypeDef> => {
+      // validate the arguments
+      const validatedArguments = createGroupChatArgumentSchema.safeParse(args);
+
+      if (!validatedArguments.success) {
+        throw new GraphQLError(validatedArguments.error.issues[0].message);
       }
 
-      return {
-        id: populatedMessage._id.toString(),
-        chat: mapChat(populatedMessage.chat as any),
-        sender: mapUser(populatedMessage.sender as any),
-        content: populatedMessage.content,
-        createdAt: populatedMessage.createdAt,
-        updatedAt: populatedMessage.updatedAt,
-      };
+      try {
+        // validate and check if all the users are valid
+        const users = await Promise.all(
+          validatedArguments.data.participants.map(async (userId) => {
+            const user = await UserModel.findById(userId);
+
+            if (!user) {
+              throw new GraphQLError("Invalid request.");
+            }
+
+            return user;
+          })
+        );
+
+        const participantsIds = users.map((user) => user._id);
+
+        // create the chat
+        const createdChat: IChat = await ChatModel.create({
+          chatName: validatedArguments.data.chatName,
+          isGroupChat: true,
+          participants: participantsIds,
+          groupAdmin: context.userId,
+        });
+
+        const populatedChat = await ChatModel.findById(createdChat._id)
+          .populate("participants")
+          .populate("groupAdmin");
+
+        if (!populatedChat) {
+          throw new GraphQLError("Failed to load chat.");
+        }
+
+        return {
+          id: populatedChat._id.toString(),
+          chatName: populatedChat.chatName,
+          isGroupChat: populatedChat.isGroupChat,
+          participants: populatedChat.participants.map((participant) => {
+            return mapUser(participant as any);
+          }),
+          groupAdmin: mapUser(populatedChat?.groupAdmin as any),
+          createdAt: populatedChat.createdAt,
+          updatedAt: populatedChat.updatedAt,
+        };
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw new GraphQLError("Something went wrong.");
+      }
     },
   },
 };
