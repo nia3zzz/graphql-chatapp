@@ -40,34 +40,9 @@ const updateUserArgumentSchema = z
   );
 
 // send message schema
-const sendMessageOneToOneArgumentSchema = z
-  .object({
-    userId: z
-      .string()
-      .length(24, "Invalid user id, must be 24 characters long."),
-
-    message: z.string().min(1, "Invalid message.").optional(),
-
-    file: z
-      .custom<File>((val) => val instanceof File, {
-        message: "Expected a File object",
-      })
-      .refine(
-        (file) =>
-          file === undefined ||
-          ["image/png", "image/jpeg", "image/webp"].includes(file.type),
-        {
-          message: "Invalid file type",
-        }
-      )
-      .refine((file) => file === undefined || file.size <= 5 * 1024 * 1024, {
-        message: "File must be under 5 MB",
-      })
-      .optional(),
-  })
-  .refine((data) => (data.message ? 1 : 0) + (data.file ? 1 : 0) === 1, {
-    message: "Either send text or file.",
-  });
+const createOneToOneChatArgumentSchema = z.object({
+  userId: z.string().length(24, "Invalid user id, must be 24 characters long."),
+});
 
 // create group chat
 const createGroupChatArgumentSchema = z.object({
@@ -85,6 +60,6 @@ const createGroupChatArgumentSchema = z.object({
 
 export {
   updateUserArgumentSchema,
-  sendMessageOneToOneArgumentSchema,
+  createOneToOneChatArgumentSchema,
   createGroupChatArgumentSchema,
 };

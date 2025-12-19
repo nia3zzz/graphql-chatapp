@@ -43,11 +43,9 @@ const typeDefs: string = `
           email: String
         ):User!
 
-        sendMessageOneToOne(
+        createOneToOneChat(
           userId: ID!
-          message: String
-          file: Upload
-        ): Message!
+        ): Chat!
 
         createGroupChat(
           chatName: String!
