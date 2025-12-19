@@ -2,6 +2,7 @@ import z from "zod";
 import {
   createGroupChatArgumentSchema,
   createOneToOneChatArgumentSchema,
+  sendMessageInChatArgumentSchema,
   updateUserArgumentSchema,
 } from "../validators/resolverValidators";
 import { GraphQLError } from "graphql";
@@ -304,6 +305,90 @@ const resolvers = {
         }
         throw new GraphQLError("Something went wrong.");
       }
+    },
+
+    sendMessageInChat: async (
+      parent: unknown,
+      args: z.infer<typeof sendMessageInChatArgumentSchema>,
+      context: IContext,
+      info: unknown
+    ) => {
+      // validate the argument
+      const validatedArguments =
+        sendMessageInChatArgumentSchema.safeParse(args);
+
+      if (!validatedArguments.success) {
+        throw new GraphQLError(validatedArguments.error.issues[0].message);
+      }
+
+      // check if the chat document exists
+      const checkChatExists: IChat | null = await ChatModel.findById(
+        validatedArguments.data.chatId
+      );
+
+      if (!checkChatExists) {
+        throw new GraphQLError("No chat found with provided chat id.");
+      }
+
+      // check if file is uploaded instead
+      let contentValue: string | null = null;
+
+      contentValue = validatedArguments.data.message ?? "";
+
+      if (validatedArguments.data.file) {
+        // convert to buffer
+        const file = validatedArguments.data.file as File;
+        const buffer = Buffer.from(await file.arrayBuffer());
+
+        // upload in stream
+        const uploadResult: UploadApiResponse = await new Promise(
+          (resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: "graphql-chatapp",
+              },
+              (err, result) => {
+                if (result) resolve(result);
+                else reject(err);
+              }
+            );
+
+            uploadStream.end(buffer);
+          }
+        );
+
+        contentValue = uploadResult.secure_url;
+      }
+
+      // create the message mutation
+      const createMessage: IMessage = await MessageModel.create({
+        chat: checkChatExists._id,
+        sender: new Types.ObjectId(context.userId),
+        content: contentValue,
+      });
+
+      // query the message with populated values
+      const populatedMessage = await MessageModel.findById(createMessage._id)
+        .populate("sender")
+        .populate({
+          path: "chat",
+          populate: {
+            path: "participants groupAdmin",
+          },
+        });
+
+      if (!populatedMessage) {
+        throw new GraphQLError("Failed to load message.");
+      }
+
+      return {
+        id: populatedMessage._id.toString(),
+        chat: mapChat(populatedMessage.chat as any),
+        sender: mapUser(populatedMessage.sender as any),
+        content: populatedMessage.content,
+        createdAt: populatedMessage.createdAt,
+        updatedAt: populatedMessage.updatedAt,
+      };
     },
   },
 };

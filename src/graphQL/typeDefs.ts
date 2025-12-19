@@ -51,6 +51,12 @@ const typeDefs: string = `
           chatName: String!
           participants: [ID!]!
         ): Chat!
+
+        sendMessageInChat(
+          chatId: String!
+          message: String
+          file: Upload
+        ): Message!
       }
 `;
 
