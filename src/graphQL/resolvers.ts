@@ -52,6 +52,30 @@ const resolvers = {
     hello: (): string => {
       return "Hello world!";
     },
+
+    me: async (
+      parent: unknown,
+      args: {},
+      context: IContext,
+      info: unknown
+    ): Promise<IUserTypeDef> => {
+      // retreive the user
+      const foundUser: IUser | null = await UserModel.findById(context.userId);
+
+      if (!foundUser) {
+        throw new GraphQLError("Something went wrong.");
+      }
+
+      return {
+        id: foundUser._id.toString(),
+        name: foundUser.name,
+        username: foundUser.username,
+        email: foundUser.email,
+        profilePicture: foundUser.profilePicture,
+        createdAt: foundUser.createdAt,
+        updatedAt: foundUser.updatedAt,
+      };
+    },
   },
 
   Mutation: {
@@ -312,7 +336,7 @@ const resolvers = {
       args: z.infer<typeof sendMessageInChatArgumentSchema>,
       context: IContext,
       info: unknown
-    ) => {
+    ): Promise<IMessageTypeDef> => {
       // validate the argument
       const validatedArguments =
         sendMessageInChatArgumentSchema.safeParse(args);

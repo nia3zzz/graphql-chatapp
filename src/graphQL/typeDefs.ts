@@ -33,6 +33,8 @@ const typeDefs: string = `
 
       type Query {
         hello: String!
+
+        me: User!
       }
 
       type Mutation {
