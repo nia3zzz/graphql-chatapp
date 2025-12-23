@@ -18,6 +18,7 @@ const typeDefs: string = `
         isGroupChat: Boolean!
         participants: [User!]!
         groupAdmin: User
+        lastMessageAt: Date!
         createdAt: Date!
         updatedAt: Date!
       }

@@ -20,6 +20,7 @@ const mapChat = (chat: IChat & { participants: IUser[] }): IChatTypeDef => ({
   isGroupChat: chat.isGroupChat,
   participants: chat.participants.map(mapUser),
   groupAdmin: chat.groupAdmin ? mapUser(chat.groupAdmin as any) : undefined,
+  lastMessageAt: chat.lastMessageAt,
   createdAt: chat.createdAt,
   updatedAt: chat.updatedAt,
 });

@@ -6,6 +6,7 @@ interface IChat extends Document {
   isGroupChat: boolean;
   participants: Types.ObjectId[];
   groupAdmin?: Types.ObjectId;
+  lastMessageAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +38,12 @@ const chatSchema = new Schema<IChat>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: false,
+    },
+
+    lastMessageAt: {
+      type: Schema.Types.Date,
+      required: false,
+      default: Date.now,
     },
   },
   {

@@ -30,6 +30,7 @@ interface IChatTypeDef {
   isGroupChat: boolean;
   participants: IUserTypeDef[];
   groupAdmin?: IUserTypeDef;
+  lastMessageAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -256,6 +257,7 @@ const resolvers = {
           participants: populatedChat.participants.map((participant) => {
             return mapUser(participant as any);
           }),
+          lastMessageAt: populatedChat.lastMessageAt,
           createdAt: populatedChat.createdAt,
           updatedAt: populatedChat.updatedAt,
         };
@@ -320,6 +322,7 @@ const resolvers = {
             return mapUser(participant as any);
           }),
           groupAdmin: mapUser(populatedChat?.groupAdmin as any),
+          lastMessageAt: populatedChat.lastMessageAt,
           createdAt: populatedChat.createdAt,
           updatedAt: populatedChat.updatedAt,
         };
@@ -389,6 +392,11 @@ const resolvers = {
         chat: checkChatExists._id,
         sender: new Types.ObjectId(context.userId),
         content: contentValue,
+      });
+
+      // update the last message field
+      await ChatModel.findByIdAndUpdate(checkChatExists._id, {
+        lastMessageAt: Date.now(),
       });
 
       // query the message with populated values
