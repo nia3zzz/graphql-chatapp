@@ -36,6 +36,11 @@ const typeDefs: string = `
         hello: String!
 
         me: User!
+
+        getChats(
+          skip: Int
+          limit: Int
+        ) : [Chat]!
       }
 
       type Mutation {
@@ -44,7 +49,7 @@ const typeDefs: string = `
           username: String
           profilePicture: Upload
           email: String
-        ):User!
+        ): User!
 
         createOneToOneChat(
           userId: ID!

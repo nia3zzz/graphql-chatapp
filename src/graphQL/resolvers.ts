@@ -2,6 +2,7 @@ import z from "zod";
 import {
   createGroupChatArgumentSchema,
   createOneToOneChatArgumentSchema,
+  getChatsArgumentSchema,
   sendMessageInChatArgumentSchema,
   updateUserArgumentSchema,
 } from "../validators/resolverValidators";
@@ -76,6 +77,46 @@ const resolvers = {
         createdAt: foundUser.createdAt,
         updatedAt: foundUser.updatedAt,
       };
+    },
+
+    getChats: async (
+      parent: unknown,
+      args: z.infer<typeof getChatsArgumentSchema>,
+      context: IContext,
+      info: unknown
+    ): Promise<IChatTypeDef[]> => {
+      // validate the query argument
+      const validatedArguments = getChatsArgumentSchema.safeParse(args);
+
+      if (!validatedArguments.success) {
+        throw new GraphQLError(validatedArguments.error.issues[0].message);
+      }
+
+      // fetch the chats
+      const chats: IChat[] = await ChatModel.find({
+        participants: {
+          $in: [context.userId],
+        },
+      })
+        .sort({ lastMessageAt: -1 })
+        .skip(validatedArguments.data.skip ?? 0)
+        .limit(validatedArguments.data.limit ?? 20)
+        .populate("participants");
+
+      // return the data
+      return chats.map((chat) => {
+        return {
+          id: chat._id.toString(),
+          chatName: chat.chatName,
+          isGroupChat: chat.isGroupChat,
+          participants: chat.participants.map((participant) => {
+            return mapUser(participant as any);
+          }),
+          lastMessageAt: chat.lastMessageAt,
+          createdAt: chat.createdAt,
+          updatedAt: chat.updatedAt,
+        };
+      });
     },
   },
 
