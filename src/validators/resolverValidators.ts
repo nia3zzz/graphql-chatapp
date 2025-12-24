@@ -55,7 +55,7 @@ const createGroupChatArgumentSchema = z.object({
     .array(
       z.string().length(24, "Invalid user id, must be 24 characters long.")
     )
-    .min(3, "At least 3 participants are required."),
+    .min(2, "At least 2 participants are required."),
 });
 
 // send messages in chats

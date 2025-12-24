@@ -298,6 +298,9 @@ const resolvers = {
 
         const participantsIds = users.map((user) => user._id);
 
+        // add the user itself in the gc
+        participantsIds.push(new Types.ObjectId(context.userId));
+
         // create the chat
         const createdChat: IChat = await ChatModel.create({
           chatName: validatedArguments.data.chatName,
